@@ -1,4 +1,4 @@
-FROM python:3.10-slim AS wheel-builder
+FROM python:3.11.14-slim AS wheel-builder
 SHELL ["/bin/bash", "-l", "-c"]
 
 ARG POETRY_VERSION="2.1.1"
@@ -31,8 +31,8 @@ RUN pip install poetry==$POETRY_VERSION && \
 FROM registry.access.redhat.com/ubi9/ubi-minimal
 SHELL ["/bin/bash", "-c"]
 
-ARG PYTHON_VERSION=3.10.12
-ARG CONDA_VERSION=23.11.0
+ARG PYTHON_VERSION=3.11.14
+ARG CONDA_VERSION=25.9.1
 ARG MINIFORGE_VERSION=${CONDA_VERSION}-0
 ARG RUNTIMES="all"
 
@@ -45,7 +45,6 @@ ENV MLSERVER_MODELS_DIR=/mnt/models \
     MLSERVER_PATH=/opt/mlserver \
     CONDA_PATH=/opt/conda \
     PATH=/opt/mlserver/.local/bin:/opt/conda/bin:$PATH \
-    LD_LIBRARY_PATH=/usr/local/nvidia/lib64:/opt/conda/lib/python3.10/site-packages/nvidia/cuda_runtime/lib:$LD_LIBRARY_PATH \
     HF_HOME=/opt/mlserver/.cache \
     NUMBA_CACHE_DIR=/opt/mlserver/.cache
 
@@ -62,7 +61,7 @@ RUN microdnf update -y && \
         # remove git requirements when alibi-detect and alibi-explain are released
         git
 
-# Install Conda, Python 3.10 and FFmpeg
+# Install Conda, Python 3.11 and FFmpeg
 RUN microdnf install -y wget && \
     wget "https://github.com/conda-forge/miniforge/releases/download/${MINIFORGE_VERSION}/Miniforge3-${MINIFORGE_VERSION}-Linux-x86_64.sh" \
         -O miniforge3.sh && \
@@ -115,7 +114,8 @@ RUN . $CONDA_PATH/etc/profile.d/conda.sh && \
         done \
     fi && \
     pip install $(ls "./dist/mlserver-"*.whl) --constraint ./dist/constraints.txt && \
-    rm -f /opt/conda/lib/python3.10/site-packages/spacy/tests/package/requirements.txt && \
+    pip install uvloop==0.21.0 && \
+    rm -f /opt/conda/lib/python3.11/site-packages/spacy/tests/package/requirements.txt && \
     rm -rf /root/.cache/pip
 
 COPY ./licenses/license.txt .
